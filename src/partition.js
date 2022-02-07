@@ -8,4 +8,4 @@ module.exports = function partition(array, filter) {
     else unpassed.push(item);
   }
   return [passed, unpassed];
-}
+};
