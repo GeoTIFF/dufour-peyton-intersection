@@ -18,4 +18,4 @@ module.exports = function cluster(items, newClusterTest) {
   } catch (error) {
     console.error("[cluster]:", error);
   }
-}
+};
