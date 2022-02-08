@@ -26,11 +26,11 @@ calculate({
 
   // width of each pixel in the spatial reference system
   // in the example below, width is in degrees
-  pixel_width: 0.02193822387867402
+  pixel_width: 0.02193822387867402,
 
   // a GeoJSON
   // currently, this algorithm only uses the following types: Polygon and MultiPolygon
-  geometry: geojson
+  geometry: geojson,
 
   // callback function run on each raster pixel that intersects the geometry
   per_pixel: ({ row, column }) => {
