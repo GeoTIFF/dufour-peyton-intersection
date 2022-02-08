@@ -1,6 +1,6 @@
-  // function to get the point at which two lines intersect
-  // the input uses the line representations from the
-  // getLineFromPoints function
+// function to get the point at which two lines intersect
+// the input uses the line representations from the
+// getLineFromPoints function
 module.exports = function getIntersectionOfTwoLines(line1, line2) {
   // calculate the determinant, ad - cb in a square matrix |a b|
   const det = line1.a * line2.b - line2.a * line1.b; /*  |c d| */
