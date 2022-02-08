@@ -1,0 +1,135 @@
+<html>
+  <head>
+    <script src="https://unpkg.com/read-pixels"></script>
+    <script src="https://unpkg.com/to-canvas"></script>
+    <script src="https://unpkg.com/geotiff@2.0.3/dist-browser/geotiff.js"></script>
+    <script src="https://unpkg.com/reproject-geojson"></script>
+    <script src="./dist/dufour-peyton-intersection.min.js"></script>
+    <script>
+      window.state = {};
+
+      function clip() {
+        console.log("starting clip", state);
+      }
+    </script>
+    <style>
+      input {
+      }
+
+      #canvas-wrapper canvas {
+        height: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Dufour-Peyton Intersection Demo</h1>
+    
+    <h2>Upload a GeoTIFF</h2>
+    <input id="raster" name="raster" type="file">
+    <div id="canvas-wrapper">
+      <canvas style="background: lightgray; max-height: 400px"></canvas>
+    </div>
+    <script>
+      document.getElementById("raster").addEventListener('input', async function(event) {
+        state.raster = {};
+        const file = event.target.files[0];
+        const fname = file.name.toLowerCase();
+        if (fname.endsWith('jpg') || fname.endsWith("png")) {
+          console.log({file});
+          const pixels = await readPixels({ data: file });
+          state.raster.data = { data: pixels.pixels, height: pixels.height, width: pixels.width };
+        } else if (fname.endsWith("tif") || fname.endsWith("tiff")) {
+          const tif = await GeoTIFF.fromBlob(file);
+          console.log({tif});
+          const im = await tif.getImage();
+          console.log({im});
+          state.raster.data = await im.readRGB({ enableAlpha: true, interleave: true });
+          state.raster.height = await im.getHeight();
+          state.raster.width = await im.getWidth();
+          state.raster.bbox = await im.getBoundingBox();
+
+          const [resolutionX, resolutionY] = im.getResolution();
+          state.raster.pixel_width = Math.abs(resolutionX);
+          state.raster.pixel_height = Math.abs(resolutionY);
+
+          const geokeys = im.getGeoKeys();
+          state.raster.crs = geokeys.ProjectedCSTypeGeoKey || geokeys.GeographicTypeGeoKey;
+
+          document.getElementById("raster-bbox").value = state.raster.bbox.toString();
+        }
+        state.raster.canvas = await toCanvas(state.raster.data);
+        const wrapper = document.getElementById("canvas-wrapper");
+        wrapper.innerHTML = "";
+        wrapper.appendChild(state.raster.canvas);
+      });
+    </script>
+    <br/>
+    <br/>
+
+    <h2>Raster Bounding Box</h2>
+    <input id="raster-bbox" name="raster-bbox" type="text" placeholder="xmin,ymin,xmax,ymax" style="width: 400px;" >
+
+    <br/>
+    <br/>
+
+    <h2>Clipping GeoJSON</h2>
+    <br/>
+    <input id="vector" name="vector" type="file">
+    <script>
+      document.getElementById("vector").addEventListener("input", async evt => {
+        state.vector = JSON.parse(await evt.target.files[0].text());
+      });
+    </script>
+    <br/>
+    <br/>
+    <button id="go" style="cursor: pointer; font-size: 24px; padding: 15px 30px;">Clip</button>
+    <script>
+      document.getElementById("go").addEventListener("click", async evt => {
+        console.log("clicked");
+
+        const geometry = reprojectGeoJSON(state.vector, { to: state.raster.crs });
+
+        const [xmin, ymin, xmax, ymax] = state.raster.bbox;
+
+        const in_data = state.raster.data;
+        const out_data = new Uint8ClampedArray(4 * state.raster.height * state.raster.width);
+        console.log({out_data});
+
+        dufour_peyton_intersection.calculate({
+          raster_bbox: state.raster.bbox,
+          raster_height: state.raster.height,
+          raster_width: state.raster.width,
+          pixel_height: state.raster.pixel_height,
+          pixel_width: state.raster.pixel_width,
+          geometry,
+          per_pixel: ({ row, column }) => {
+            // clip
+            const i = 4 * (row * state.raster.width + column);
+
+            // r, g, b, a
+            for (let ii = i; ii < i + 4; ii++) {
+              // out_data[ii] = in_data[ii];
+              out_data[ii] = 128;
+            }
+          }
+        });
+
+        console.log({out_data});
+
+        const out_canvas = await toCanvas({ data: out_data, height: state.raster.height, width: state.raster.width });
+        out_canvas.style.width = "100%";
+        console.log({out_canvas});
+
+        document.getElementById("result").innerHTML = "";
+        document.getElementById("result").appendChild(out_canvas);
+      });
+    </script>
+
+    <hr>
+
+    <h2>Result</h2>
+    <div id="result">
+      <canvas style="background: lightgray; max-width: 100%"></canvas>
+    </div>
+  </body>
+</html>
