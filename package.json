@@ -1,0 +1,63 @@
+{
+  "name": "dufour-peyton-intersection",
+  "version": "0.0.0",
+  "description": "Reference Implementation of the Dufour-Peyton Intersection Algorithm. Calculates the Intersections of Arbitrary Polygons with a Geospatial Raster.",
+  "main": "src/index.js",
+  "files": [
+    "dist/dufour-peyton-intersection.min.js",
+    "dist/dufour-peyton-intersection.min.js.map",
+    "src/calculate.js",
+    "src/categorize-intersection.js",
+    "src/clamp.js",
+    "src/cluster-line-segments.js",
+    "src/cluster.js",
+    "src/couple.js",
+    "src/each-edge.js",
+    "src/each-polygon.js",
+    "src/get-bounding-box.js",
+    "src/get-edges.js",
+    "src/get-intersection-of-two-lines.js",
+    "src/get-line-from-points.js",
+    "src/get-polygons.js",
+    "src/index.js",
+    "src/merge-ranges.js",
+    "src/partition.js",
+    "src/range.js"
+  ],
+  "scripts": {
+    "build": "npx webpack --devtool=source-map --mode=production --output-filename=dufour-peyton-intersection.min.js --target web",
+    "dev": "npx webpack --mode=production --output-filename=dufour-peyton-intersection.min.js --target web --watch",
+    "format": "npx prettier --arrow-parens=avoid --print-width=160 --trailing-comma=none --write ./src/*.js test.js",
+    "setup": "cd data && ./setup.sh",
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GeoTIFF/dufour-peyton-intersection.git"
+  },
+  "keywords": [
+    "geojson",
+    "georaster",
+    "geospatial",
+    "geotiff",
+    "gis",
+    "intersection",
+    "polygon",
+    "raster"
+  ],
+  "author": "Daniel J. Dufour & Stephen Peyton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GeoTIFF/dufour-peyton-intersection/issues"
+  },
+  "homepage": "https://github.com/GeoTIFF/dufour-peyton-intersection#readme",
+  "dependencies": {
+    "get-depth": "^0.0.3"
+  },
+  "devDependencies": {
+    "find-and-read": "^1.1.0",
+    "flug": "^2.2.0",
+    "geotiff-from": "^1.0.1",
+    "geotiff-precise-bbox": "^0.0.1"
+  }
+}
