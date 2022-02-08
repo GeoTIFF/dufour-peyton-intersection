@@ -1,113 +1,45 @@
-const getDepth = require("get-depth");
-
-const add = require("preciso/add.js");
-const divide = require("preciso/divide.js");
-const multiply = require("preciso/multiply.js");
-const remainder = require("preciso/remainder.js");
-const subtract = require("preciso/subtract.js");
-
+const getLineFromPoints = require("./get-line-from-points.js");
 const categorizeIntersection = require("./categorize-intersection.js");
 const clamp = require("./clamp.js");
-const clusterLineSegments = require("./cluster-line-segments.js");
 const couple = require("./couple.js");
+const clusterLineSegments = require("./cluster-line-segments.js");
+const getEdges = require("./get-edges.js");
 const getIntersectionOfTwoLines = require("./get-intersection-of-two-lines.js");
-const getLineFromPoints = require("./get-line-from-points.js");
-const getBoundingBox = require("./get-bounding-box.js");
+const getPolygons = require("./get-polygons.js");
 const mergeRanges = require("./merge-ranges.js");
 const partition = require("./partition.js");
+const range = require("./range.js");
 
-/*
-  don't need
-  - noDataValue
-  - values/imageBands
-
-
-  // assumes same SRS
-*/
-
-// I don't think this supports polygons with holes
-const getEdgesForPolygon = polygon => {
-  const edges = [];
-  polygon.forEach(ring => {
-    for (let i = 1; i < ring.length; i++) {
-      const startPoint = ring[i - 1];
-      const endPoint = ring[i];
-      edges.push([startPoint, endPoint]);
-    }
-  });
-  return edges;
-};
-
-module.exports = function calculateIntersections({
-  precise = true, // whether to use infinitely precise or floating-point arithmetic
-  raster_bbox, // compute pixel width and height from this
-  raster_height, // height of the raster in pixels
-  raster_width, // width of the raster in pixels
-  vector, // vector geometry
-  vector_bbox,
-  callback
-}) {
-  if (raster_height === 0) return;
-
-  const raster_height_string = raster_height.toString();
-  const raster_width_string = raster_width.toString();
-
-  // convert bbox to strings
-  raster_bbox = raster_bbox.map(n => n.toString());
-  const [raster_xmin, raster_ymin, raster_xmax, raster_ymax] = raster_bbox;
-
-  const cell_height = divide(subtract(raster_ymax, raster_ymin), raster_height_string);
-  const half_cell_height = divide(cell_height, "2");
-  const half_cell_height_number = Number(half_cell_height);
-
-  const cell_width = divide(subtract(raster_xmax, raster_xmin), raster_width_string);
-  const half_cell_width = divide(cell_width, "2");
-  const half_cell_width_number = Number(half_cell_width);
-
-  const index_of_last_row = raster_height - 1;
-
-  // get values in a bounding box around the geometry
-  vector_bbox ??= getBoundingBox(vector);
-
-  // set origin points of bbox of geometry in image space
-  const y0str = add(vector_bbox.ymax.toString(), remainder(subtract(raster_ymax, vector_bbox.ymax.toString()), cell_height));
-  const y0 = Number(y0str);
-  const x0str = subtract(vector_bbox.xmin.toString(), remainder(subtract(vector_bbox.xmin.toString(), raster_xmin), cell_width));
-  const x0 = Number(x0str);
+module.exports = function calculate({ raster_bbox, raster_height, raster_width, pixel_height, pixel_width, geometry, per_pixel, per_row_segment }) {
+  const lat0 = raster_bbox[3];
+  const lng0 = raster_bbox[0];
 
   // iterate through image rows and convert each one to a line
   // running through the middle of the row
-  const image_lines = [];
+  const imageLines = [];
+
+  if (raster_height === 0) return;
 
   for (let y = 0; y < raster_height; y++) {
-    let lat;
-    if (precise) {
-      lat = Number(subtract(subtract(y0str, multiply(cell_height, y.toString())), half_cell_height));
-    } else {
-      lat = y0 - cell_height * y - cell_height / 2;
-    }
+    const lat = lat0 - pixel_height * y - pixel_height / 2;
 
     // use that point, plus another point along the same latitude to
     // create a line
-    const point0 = [x0, lat];
-    const point1 = [x0 + 1, lat];
+    const point0 = [lng0, lat];
+    const point1 = [lng0 + 1, lat];
     const line = getLineFromPoints(point0, point1);
-    image_lines.push(line);
+    imageLines.push(line);
   }
 
   // collapse geometry down to a list of edges
   // necessary for multi-part geometries
-  const depth = getDepth(vector);
-  const polygonEdges = depth === 4 ? vector.map(getEdgesForPolygon) : [getEdgesForPolygon(vector)];
-
-  const intersections = new Array(raster_height);
+  const polygons = getPolygons(geometry);
+  const polygonEdges = polygons.map(getEdges);
 
   polygonEdges.forEach(edges => {
     // iterate through the list of polygon vertices, convert them to
     // lines, and compute the intersections with each image row
-    const intersectionsByRow = [];
-    for (let i = 0; i < raster_height; i++) intersectionsByRow.push([]);
-    
+    const intersectionsByRow = range(raster_height).map(() => []);
     const numberOfEdges = edges.length;
     for (let i = 0; i < numberOfEdges; i++) {
       // get vertices that make up an edge and convert that to a line
@@ -128,49 +60,47 @@ module.exports = function calculateIntersections({
       const edgeYMin = Math.min(y1, y2);
       const edgeYMax = Math.max(y1, y2);
 
-      let startX, startY, endY, endX;
+      let startLng, startLat, endLat, endLng;
       if (x1 < x2) {
-        [startX, startY] = startPoint;
-        [endX, endY] = endPoint;
+        [startLng, startLat] = startPoint;
+        [endLng, endLat] = endPoint;
       } else {
-        [startX, startY] = endPoint;
-        [endX, endY] = startPoint;
+        [startLng, startLat] = endPoint;
+        [endLng, endLat] = startPoint;
       }
 
-      if (startX === undefined) throw Error("startX is " + startX);
+      if (startLng === undefined) throw Error("startLng is " + startLng);
 
       // find the y values in the image coordinate space
-      const imageY1 = Math.round((y0 - half_cell_height_number - startY) / cell_height);
-      const imageY2 = Math.round((y0 - half_cell_height_number - endY) / cell_height);
+      const imageY1 = Math.round((raster_bbox[3] - 0.5 * pixel_height - startLat) / pixel_height);
+      const imageY2 = Math.round((raster_bbox[3] - 0.5 * pixel_height - endLat) / pixel_height);
 
       // make sure to set the start and end points so that we are
       // incrementing upwards through rows
-      let row_start, row_end;
+      let rowStart, rowEnd;
       if (imageY1 < imageY2) {
-        row_start = imageY1;
-        row_end = imageY2;
+        rowStart = imageY1;
+        rowEnd = imageY2;
       } else {
-        row_start = imageY2;
-        row_end = imageY1;
+        rowStart = imageY2;
+        rowEnd = imageY1;
       }
 
-      row_start = clamp(row_start, 0, index_of_last_row);
-      row_end = clamp(row_end, 0, index_of_last_row);
-
+      rowStart = clamp(rowStart, 0, raster_height - 1);
+      rowEnd = clamp(rowEnd, 0, raster_height - 1);
       // iterate through image lines within the change in y of
       // the edge line and find all intersections
-      for (let j = row_start; j < row_end + 1; j++) {
-        const imageLine = image_lines[j];
+      for (let j = rowStart; j < rowEnd + 1; j++) {
+        const imageLine = imageLines[j];
 
         if (imageLine === undefined) {
           console.error("j:", j);
-          console.error("image_lines:", image_lines);
-          throw Error("image_lines");
+          console.error("imageLines:", imageLines);
+          throw Error("imageLines");
         }
 
         // because you know x is zero in ax + by = c, so by = c and b = -1, so -1 * y = c or y = -1 * c
         const imageLineY = -1 * imageLine.c;
-        //if (j === row_start) console.log("imageLineY:", imageLineY);
 
         const startsOnLine = y1 === imageLineY;
         const endsOnLine = y2 === imageLineY;
@@ -179,16 +109,16 @@ module.exports = function calculateIntersections({
         let xminOnLine, xmaxOnLine;
         if (horizontal) {
           if (edgeY === imageLineY) {
-            xminOnLine = startX;
-            xmaxOnLine = endX;
+            xminOnLine = startLng;
+            xmaxOnLine = endLng;
           } else {
             continue; // stop running calculations for this horizontal line because it doesn't intersect at all
           }
         } else if (vertical) {
-          /* we have to have a separate section for vertical bc of floating point arithmetic probs with get_inter..." */
+          /* we have to have a seprate section for vertical because of floating point arithmetic probs with get_inter..." */
           if (imageLineY >= edgeYMin && imageLineY <= edgeYMax) {
-            xminOnLine = startX;
-            xmaxOnLine = endX;
+            xminOnLine = startLng;
+            xmaxOnLine = endLng;
           }
         } else if (startsOnLine) {
           // we know that the other end is not on the line because then it would be horizontal
@@ -208,9 +138,7 @@ module.exports = function calculateIntersections({
         // the edge line segment. If it is, add the intersection to the
         // list of intersections at the corresponding index for that row
         // in intersectionsByRow
-        if (xminOnLine && xmaxOnLine && (horizontal || (xminOnLine >= startX && xmaxOnLine <= endX && imageLineY <= edgeYMax && imageLineY >= edgeYMin))) {
-          //let image_pixel_index = Math.floor((intersection.x - x0) / cellWidth);
-          //intersectionsByRow[j].push(image_pixel_index);
+        if (xminOnLine && xmaxOnLine && (horizontal || (xminOnLine >= startLng && xmaxOnLine <= endLng && imageLineY <= edgeYMax && imageLineY >= edgeYMin))) {
           intersectionsByRow[j].push({
             direction,
             index: i,
@@ -228,14 +156,14 @@ module.exports = function calculateIntersections({
       }
     }
 
-    intersectionsByRow.map((segmentsInRow, rowIndex) => {
+    intersectionsByRow.map((segmentsInRow, row_index) => {
       if (segmentsInRow.length > 0) {
         const clusters = clusterLineSegments(segmentsInRow, numberOfEdges);
         const categorized = clusters.map(categorizeIntersection);
         const [throughs, nonthroughs] = partition(categorized, item => item.through);
 
         if (throughs.length % 2 === 1) {
-          throw Error("throughs.length for " + rowIndex + " is odd with " + throughs.length);
+          throw Error("throughs.length for " + row_index + " is odd with " + throughs.length);
         }
 
         let insides = nonthroughs.map(intersection => [intersection.xmin, intersection.xmax]);
@@ -243,7 +171,10 @@ module.exports = function calculateIntersections({
         // sorts throughs from left to right in-place
         throughs.sort((a, b) => a.xmin - b.xmin);
 
-        const couples = couple(throughs).map(([left, right]) => [left.xmin, right.xmax]);
+        const couples = couple(throughs).map(couple => {
+          const [left, right] = couple;
+          return [left.xmin, right.xmax];
+        });
 
         insides = insides.concat(couples);
 
@@ -253,24 +184,30 @@ module.exports = function calculateIntersections({
         */
         insides = mergeRanges(insides);
 
-        insides.forEach(([xmin, xmax]) => {
-          // convert left and right to image pixels
-          const left = Math.round((xmin - (x0 + half_cell_width_number)) / cell_width);
-          const right = Math.round((xmax - (x0 + half_cell_width_number)) / cell_width);
+        insides.forEach(pair => {
+          const [xmin, xmax] = pair;
 
-          const startColumnIndex = Math.max(left, 0);
-          const endColumnIndex = Math.min(right, raster_width);
+          //convert left and right to image pixels
+          const left = Math.round((xmin - (lng0 + 0.5 * pixel_width)) / pixel_width);
+          const right = Math.round((xmax - (lng0 + 0.5 * pixel_width)) / pixel_width);
 
-          callback({
-            row: rowIndex,
-            columns: [startColumnIndex, endColumnIndex]
-          });
+          const start_column_index = Math.max(left, 0);
+          const end_column_index = Math.min(right, raster_width);
+
+          if (per_row_segment) {
+            per_row_segment({
+              row: row_index,
+              columns: [start_column_index, end_column_index]
+            });
+          }
+
+          if (per_pixel) {
+            for (let column_index = start_column_index; column_index <= end_column_index; column_index++) {
+              per_pixel({ row: row_index, column: column_index });
+            }
+          }
         });
       }
     });
   });
-
-  return {
-    vector_bbox
-  };
 };
