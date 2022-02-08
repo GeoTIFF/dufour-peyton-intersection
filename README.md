@@ -32,7 +32,8 @@ calculate({
   // currently, this algorithm only uses the following types: Polygon and MultiPolygon
   geometry: geojson
 
-  on_pixel: ({ row, column }) => {
+  // callback function run on each raster pixel that intersects the geometry
+  per_pixel: ({ row, column }) => {
     console.log("we found a raster pixel that intersects the geometry at");
     console.log("row (from top to bottom): " + row);
     console.log("column (from left to right): " + column)
