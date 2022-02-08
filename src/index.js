@@ -11,6 +11,7 @@ const getIntersectionOfTwoLines = require("./get-intersection-of-two-lines.js");
 const getLineFromPoints = require("./get-line-from-points.js");
 const mergeRanges = require("./merge-ranges.js");
 const partition = require("./partition.js");
+const range = require("./range.js");
 
 const dufour_peyton_intersection = {
   calculate,
@@ -25,7 +26,8 @@ const dufour_peyton_intersection = {
   getLineFromPoints,
   getPolygons,
   mergeRanges,
-  partition
+  partition,
+  range
 };
 
 if (typeof define === "function" && define.amd) define(() => dufour_peyton_intersection);
