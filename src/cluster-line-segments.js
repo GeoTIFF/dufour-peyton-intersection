@@ -21,4 +21,4 @@ module.exports = function clusterLineSegments(lineSegments, numberOfEdges, debug
   } catch (error) {
     console.error("[clusterLineSegments]", error);
   }
-}
+};
