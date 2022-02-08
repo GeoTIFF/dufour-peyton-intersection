@@ -106,3 +106,5 @@ dist
 .DS_Store
 pnpm-lock.yaml
 *bak*
+*.tif
+*.tiff
