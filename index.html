@@ -1,21 +1,13 @@
 <html>
   <head>
+    <script src="https://unpkg.com/dropzone-complete"></script>
     <script src="https://unpkg.com/read-pixels"></script>
     <script src="https://unpkg.com/to-canvas"></script>
     <script src="https://unpkg.com/geotiff@2.0.3/dist-browser/geotiff.js"></script>
     <script src="https://unpkg.com/reproject-geojson"></script>
     <script src="./dist/dufour-peyton-intersection.min.js"></script>
-    <script>
-      window.state = {};
-
-      function clip() {
-        console.log("starting clip", state);
-      }
-    </script>
+    <script>window.state = {};</script>
     <style>
-      input {
-      }
-
       #canvas-wrapper canvas {
         height: 400px;
       }
@@ -73,11 +65,12 @@
     <br/>
 
     <h2>Clipping GeoJSON</h2>
-    <br/>
-    <input id="vector" name="vector" type="file">
+    <dropzone-complete id="vector" height=400 width="100%"></dropzone-complete>
     <script>
-      document.getElementById("vector").addEventListener("input", async evt => {
-        state.vector = JSON.parse(await evt.target.files[0].text());
+      document.getElementById("vector").addEventListener("change", async function (event) {
+        if (event.detail && event.detail.file) {
+          state.vector = JSON.parse(await event.detail.file.text());
+        }
       });
     </script>
     <br/>
@@ -108,17 +101,13 @@
 
             // r, g, b, a
             for (let ii = i; ii < i + 4; ii++) {
-              // out_data[ii] = in_data[ii];
-              out_data[ii] = 128;
+              out_data[ii] = in_data[ii];
             }
           }
         });
 
-        console.log({out_data});
-
         const out_canvas = await toCanvas({ data: out_data, height: state.raster.height, width: state.raster.width });
         out_canvas.style.width = "100%";
-        console.log({out_canvas});
 
         document.getElementById("result").innerHTML = "";
         document.getElementById("result").appendChild(out_canvas);
