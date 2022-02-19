@@ -1,5 +1,5 @@
 # dufour-peyton-intersection
-Reference Implementation of the Dufour-Peyton Intersection Algorithm.  Calculates the Intersections of Arbitrary Polygons with a Geospatial Raster.
+Reference Implementation of the Dufour-Peyton Intersection Algorithm.  Calculates the Intersections of Arbitrary Polygons with a Geospatial Raster.  Originally developed for [geoblaze](geoblaze.io).
 
 # install
 ```bash
@@ -8,9 +8,9 @@ npm install dufour-peyton-intersection
 
 # usage
 ```js
-import { calculate } from "dufour-peyton-intersection";
+import dufour_peyton_intersection from "dufour-peyton-intersection";
 
-calculate({
+dufour_peyton_intersection.calculate({
   // bounding box of raster in format [xmin, ymin, xmax, ymax]
   raster_bbox: [ 69.15892987765864, 1.4638624159537426, 90.43900703997244, 11.81870408668788],
 
@@ -29,8 +29,15 @@ calculate({
   pixel_width: 0.02193822387867402,
 
   // a GeoJSON
-  // currently, this algorithm only uses the following types: Polygon and MultiPolygon
+  // currently, this algorithm only support the following geometry types: Polygon and MultiPolygon
   geometry: geojson,
+
+  // callback function run on each horizontal strip of consecutive intersecting pixels
+  per_row_segment: ({ row, columns }) => {
+    console.log("row index is (starting from zero):", row);
+    const [start, end] = columns;
+    console.log(`columns range is inclusive, starting at column ${start} and ending at column ${end}`);
+  },
 
   // callback function run on each raster pixel that intersects the geometry
   per_pixel: ({ row, column }) => {
