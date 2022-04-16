@@ -10,7 +10,7 @@ npm install dufour-peyton-intersection
 ```js
 import dufour_peyton_intersection from "dufour-peyton-intersection";
 
-dufour_peyton_intersection.calculate({
+const result = dufour_peyton_intersection.calculate({
   // bounding box of raster in format [xmin, ymin, xmax, ymax]
   raster_bbox: [ 69.15892987765864, 1.4638624159537426, 90.43900703997244, 11.81870408668788],
 
@@ -46,4 +46,17 @@ dufour_peyton_intersection.calculate({
     console.log("column (from left to right): " + column)
   }
 })
+```
+calculate returns the following object:
+```js
+{
+  rows: [
+    <91 empty items>, // empty rows mean that the geometry does not intersect these raster rows 
+    [ [ 500, 504 ] ], // 5 pixels (500 to 504) in row 92 (zero-index) intersect the geometry
+    [ [ 491, 505 ] ],
+    [ [ 490, 499 ], [ 501, 505 ] ], // two parts of the geometry intersect this row and are separated by 1 pixel at index 500
+    [ [ 487, 506 ] ],
+    ... 380 more items
+  ]
+}
 ```
