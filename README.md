@@ -1,12 +1,16 @@
 # dufour-peyton-intersection
 Reference Implementation of the Dufour-Peyton Intersection Algorithm.  Calculates the Intersections of Arbitrary Polygons with a Geospatial Raster.  Originally developed for [geoblaze](geoblaze.io).
 
-# install
+## features
+- supports very large rasters because speed determined by number of geometry vertices
+- avoids double counting pixels in overlapping polygons
+
+## install
 ```bash
 npm install dufour-peyton-intersection
 ```
 
-# usage
+## usage
 ```js
 import dufour_peyton_intersection from "dufour-peyton-intersection";
 
@@ -60,3 +64,10 @@ calculate returns the following object:
   ]
 }
 ```
+
+## links
+- https://medium.com/@DanielJDufour/calculating-intersection-of-polygon-with-a-raster-89c2624d78a2
+
+## used by
+- [geoblaze](https://geoblaze.io/): blazing fast raster statistics engine
+- [geomask](https://github.com/danieljdufour/geomask): low-level geospatial masking functions
