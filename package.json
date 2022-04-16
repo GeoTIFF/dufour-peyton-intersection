@@ -34,7 +34,7 @@
     "dev": "npx webpack --mode=production --output-filename=dufour-peyton-intersection.min.js --target web --watch",
     "format": "npx prettier --arrow-parens=avoid --print-width=160 --trailing-comma=none --write ./src/*.js test.js",
     "setup": "cd data && ./setup.sh",
-    "test": "node test.js"
+    "test": "node -r require-esm-as-empty-object test.js"
   },
   "repository": {
     "type": "git",
@@ -64,6 +64,7 @@
     "flug": "^2.2.0",
     "geotiff-from": "^1.0.1",
     "geotiff-precise-bbox": "^0.0.1",
+    "require-esm-as-empty-object": "^0.0.1",
     "webpack": "^5.72.0",
     "webpack-cli": "^4.9.2"
   }
