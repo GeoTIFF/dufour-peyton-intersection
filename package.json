@@ -2,7 +2,7 @@
   "name": "dufour-peyton-intersection",
   "version": "0.0.1",
   "description": "Reference Implementation of the Dufour-Peyton Intersection Algorithm. Calculates the Intersections of Arbitrary Polygons with a Geospatial Raster.",
-  "main": "src/index.js",
+  "main": "./src/index.js",
   "jsdelivr": "dist/dufour-peyton-intersection.min.js",
   "unpkg": "dist/dufour-peyton-intersection.min.js",
   "files": [
