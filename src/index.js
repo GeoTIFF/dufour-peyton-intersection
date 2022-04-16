@@ -3,6 +3,7 @@ const clamp = require("./clamp.js");
 const cluster = require("./cluster.js");
 const clusterLineSegments = require("./cluster-line-segments.js");
 const calculate = require("./calculate.js");
+const calculateCore = require("./calculate-core.js");
 const couple = require("./couple.js");
 const getBoundingBox = require("./get-bounding-box.js");
 const getPolygons = require("./get-polygons.js");
@@ -15,6 +16,7 @@ const range = require("./range.js");
 
 const dufour_peyton_intersection = {
   calculate,
+  calculateCore,
   categorizeIntersection,
   clamp,
   cluster,

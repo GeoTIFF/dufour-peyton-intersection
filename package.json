@@ -9,7 +9,9 @@
     "dist/dufour-peyton-intersection.min.js",
     "dist/dufour-peyton-intersection.min.js.map",
     "src/calculate.js",
+    "src/calculate-core.js",
     "src/categorize-intersection.js",
+    "src/check-rows.js",
     "src/clamp.js",
     "src/cluster-line-segments.js",
     "src/cluster.js",
@@ -22,6 +24,7 @@
     "src/get-line-from-points.js",
     "src/get-polygons.js",
     "src/index.js",
+    "src/merge-consecutive-ranges.js",
     "src/merge-ranges.js",
     "src/partition.js",
     "src/range.js"

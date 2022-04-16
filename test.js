@@ -7,6 +7,7 @@ const getPreciseBoundingBox = require("geotiff-precise-bbox");
 const from = require("geotiff-from");
 
 const {
+  calculateCore,
   calculate,
   categorizeIntersection,
   couple,
@@ -289,7 +290,7 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
   let minCol = Infinity;
   let maxCol = -Infinity;
 
-  calculate({
+  calculateCore({
     raster_bbox,
     raster_height,
     raster_width,
@@ -329,7 +330,7 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
   minCol = Infinity;
   maxCol = -Infinity;
 
-  calculate({
+  calculateCore({
     // bounding box where bottom left is (0,0)
     raster_bbox: [0, 0, raster_width, raster_height],
     raster_height,
@@ -350,4 +351,28 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
   eq(maxRow, EXPECTED_MAX_ROW);
   eq(minCol, EXPECTED_MIN_COL);
   eq(maxCol, EXPECTED_MAX_COL);
+});
+
+test("validate ranges", ({ eq }) => {
+  ["sri-lanka.geojson", "sri-lanka-hires.geojson"].forEach(filename => {
+    const result = calculate({
+      raster_bbox: [69.15892987765864, 1.4662483490272988, 90.42846112765297, 11.81870408668788],
+      raster_height: 475,
+      raster_width: 968,
+      pixel_height: 0.0217946436582328,
+      pixel_width: 0.021972656249994144,
+      geometry: JSON.parse(findAndRead(filename, { encoding: "utf-8" })),
+      per_row_segment: ({ row, columns }) => {
+        const [start, end] = columns;
+        if (start > end) {
+          throw new Error("uh oh. in row", row, "range", columns);
+        }
+      }
+    });
+    eq(result.rows.length, 475);
+    result.rows.forEach(row => {
+      const flattened = row.flat();
+      eq(flattened, flattened.sort());
+    });
+  });
 });
