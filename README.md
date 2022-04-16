@@ -45,7 +45,7 @@ const result = dufour_peyton_intersection.calculate({
     console.log("row (from top to bottom): " + row);
     console.log("column (from left to right): " + column)
   }
-})
+});
 ```
 calculate returns the following object:
 ```js
