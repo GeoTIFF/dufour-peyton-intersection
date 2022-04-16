@@ -48,6 +48,7 @@
           state.raster.crs = geokeys.ProjectedCSTypeGeoKey || geokeys.GeographicTypeGeoKey;
 
           document.getElementById("raster-bbox").value = state.raster.bbox.toString();
+          document.getElementById("raster-crs").value = state.raster.crs.toString();
         }
         state.raster.canvas = await toCanvas(state.raster.data);
         const wrapper = document.getElementById("canvas-wrapper");
@@ -60,6 +61,17 @@
 
     <h2>Raster Bounding Box</h2>
     <input id="raster-bbox" name="raster-bbox" type="text" placeholder="xmin,ymin,xmax,ymax" style="width: 400px;" >
+
+    <br/>
+    <br/>
+
+    <h2>Raster Projection</h2>
+    <input id="raster-crs" name="raster-crs" type="text" placeholder="4326" style="width: 400px;">
+    <script>
+      document.getElementById("raster-crs").addEventListener("change", function (event) {
+        state.raster.crs = event.target.value;
+      });
+    </script>
 
     <br/>
     <br/>
