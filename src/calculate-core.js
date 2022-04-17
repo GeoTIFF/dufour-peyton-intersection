@@ -11,8 +11,7 @@ const partition = require("./partition.js");
 const range = require("./range.js");
 
 module.exports = function calculateCore({ raster_bbox, raster_height, raster_width, pixel_height, pixel_width, geometry, per_pixel, per_row_segment }) {
-  const lat0 = raster_bbox[3];
-  const lng0 = raster_bbox[0];
+  const [raster_xmin, raster_ymin, raster_xmax, raster_ymax] = raster_bbox;
 
   // iterate through image rows and convert each one to a line
   // running through the middle of the row
@@ -21,12 +20,12 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
   if (raster_height === 0) return;
 
   for (let y = 0; y < raster_height; y++) {
-    const lat = lat0 - pixel_height * y - pixel_height / 2;
+    const lat = raster_ymax - pixel_height * y - pixel_height / 2;
 
     // use that point, plus another point along the same latitude to
     // create a line
-    const point0 = [lng0, lat];
-    const point1 = [lng0 + 1, lat];
+    const point0 = [raster_xmin, lat];
+    const point1 = [raster_xmin + 1, lat];
     const line = getLineFromPoints(point0, point1);
     imageLines.push(line);
   }
@@ -188,11 +187,14 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
           const [xmin, xmax] = pair;
 
           //convert left and right to image pixels
-          const left = Math.round((xmin - (lng0 + 0.5 * pixel_width)) / pixel_width);
-          const right = Math.round((xmax - (lng0 + 0.5 * pixel_width)) / pixel_width);
+          const left = Math.round((xmin - (raster_xmin + 0.5 * pixel_width)) / pixel_width);
+          const right = Math.round((xmax - (raster_xmin + 0.5 * pixel_width)) / pixel_width);
+
+          // skip because segment is beyond the right edge of the raster
+          if (left >= raster_width) return;
 
           const start_column_index = Math.max(left, 0);
-          const end_column_index = Math.min(right, raster_width);
+          const end_column_index = Math.min(right, raster_width - 1);
 
           if (per_row_segment) {
             per_row_segment({

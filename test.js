@@ -5,6 +5,7 @@ const test = require("flug");
 const findAndRead = require("find-and-read");
 const getPreciseBoundingBox = require("geotiff-precise-bbox");
 const from = require("geotiff-from");
+const reprojectGeoJSON = require("reproject-geojson");
 
 const {
   calculateCore,
@@ -373,6 +374,33 @@ test("validate ranges", ({ eq }) => {
     result.rows.forEach(row => {
       const flattened = row.flat();
       eq(flattened, flattened.sort());
+    });
+  });
+});
+
+test("geometry larger than raster", ({ eq }) => {
+  const result = calculate({
+    // tile within the united states
+    raster_bbox: [-11271133.50845855, 4381155.514617654, -10640325.58387179, 5012277.581474598],
+    raster_height: 256,
+    raster_width: 256,
+    pixel_height: 2465.3205736599375,
+    pixel_width: 2464.0934554170312,
+    geometry: reprojectGeoJSON(JSON.parse(findAndRead("usa.geojson", "utf-8")), { from: 4326, to: 3857 }),
+    per_row_segment: ({ row, columns }) => {
+      try {
+        const [start, end] = columns;
+        eq(start <= end, true);
+      } catch (error) {
+        console.log("row:", row);
+        console.log("columns:", columns);
+        throw error;
+      }
+    }
+  });
+  result.rows.forEach(segs => {
+    segs.forEach(([start, end]) => {
+      eq(start <= end, true);
     });
   });
 });

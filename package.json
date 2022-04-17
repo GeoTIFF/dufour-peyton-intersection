@@ -64,6 +64,7 @@
     "flug": "^2.2.0",
     "geotiff-from": "^1.0.1",
     "geotiff-precise-bbox": "^0.0.1",
+    "reproject-geojson": "^0.1.2",
     "require-esm-as-empty-object": "^0.0.1",
     "webpack": "^5.72.0",
     "webpack-cli": "^4.9.2"
