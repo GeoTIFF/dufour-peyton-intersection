@@ -193,6 +193,9 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
           // skip because segment is beyond the right edge of the raster
           if (left >= raster_width) return;
 
+          // skip because segment is beyond the left edge of the raster
+          if (right < 0) return;
+
           const start_column_index = Math.max(left, 0);
           const end_column_index = Math.min(right, raster_width - 1);
 

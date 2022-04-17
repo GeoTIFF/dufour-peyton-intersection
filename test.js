@@ -404,3 +404,30 @@ test("geometry larger than raster", ({ eq }) => {
     });
   });
 });
+
+test("geometry extends beyond left edge of raster", ({ eq }) => {
+  const result = calculate({
+    // tile covers east of united states
+    raster_bbox: [-10018754.171394622, -7.081154551613622e-10, 0, 10018754.171394624],
+    raster_height: 256,
+    raster_width: 256,
+    pixel_height: 39135.75848201025,
+    pixel_width: 39135.75848201024,
+    geometry: reprojectGeoJSON(JSON.parse(findAndRead("usa.geojson", "utf-8")), { from: 4326, to: 3857 }),
+    per_row_segment: ({ row, columns }) => {
+      try {
+        const [start, end] = columns;
+        eq(start <= end, true);
+      } catch (error) {
+        console.log("row:", row);
+        console.log("columns:", columns);
+        throw error;
+      }
+    }
+  });
+  result.rows.forEach(segs => {
+    segs.forEach(([start, end]) => {
+      eq(start <= end, true);
+    });
+  });
+});
