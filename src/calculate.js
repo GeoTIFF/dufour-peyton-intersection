@@ -14,8 +14,8 @@ module.exports = function calculate({
   per_row_segment
 }) {
   const [xmin, ymin, xmax, ymax] = raster_bbox;
-  pixel_height ??= (ymax - ymin) / raster_height;
-  pixel_width ??= (xmax - xmin) / raster_width;
+  if (pixel_height === undefined || pixel_height === null) pixel_height = (ymax - ymin) / raster_height;
+  if (pixel_width === undefined || pixel_width === null) pixel_width = (xmax - xmin) / raster_width;
 
   const rows = new Array(raster_height);
 
