@@ -60,6 +60,8 @@
     "get-depth": "^0.0.3"
   },
   "devDependencies": {
+    "@danieljdufour/write-png": "^0.0.1",
+    "fast-counter": "^0.1.0",
     "find-and-read": "^1.1.0",
     "flug": "^2.2.0",
     "geotiff-from": "^1.0.1",
@@ -67,6 +69,8 @@
     "reproject-geojson": "^0.1.2",
     "require-esm-as-empty-object": "^0.0.1",
     "webpack": "^5.72.0",
-    "webpack-cli": "^4.9.2"
+    "webpack-cli": "^4.9.2",
+    "write-image": "^0.2.0",
+    "xdim": "^1.10.1"
   }
 }
