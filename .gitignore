@@ -110,3 +110,4 @@ pnpm-lock.yaml
 *.cog
 *.tif
 *.tiff
+test-output/
