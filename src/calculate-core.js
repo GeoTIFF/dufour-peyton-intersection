@@ -8,9 +8,20 @@ const getIntersectionOfTwoLines = require("./get-intersection-of-two-lines.js");
 const getPolygons = require("./get-polygons.js");
 const mergeRanges = require("./merge-ranges.js");
 const partition = require("./partition.js");
+const prepareSnap = require("./prepare-snap.js");
 const range = require("./range.js");
 
-module.exports = function calculateCore({ raster_bbox, raster_height, raster_width, pixel_height, pixel_width, geometry, per_pixel, per_row_segment }) {
+module.exports = function calculateCore({
+  debug_level = 0,
+  raster_bbox,
+  raster_height, // number of rows of pixels in the raster
+  raster_width, // number of columns of pixels in the raster
+  pixel_height,
+  pixel_width,
+  geometry,
+  per_pixel,
+  per_row_segment
+}) {
   const [raster_xmin, raster_ymin, raster_xmax, raster_ymax] = raster_bbox;
 
   // iterate through image rows and convert each one to a line
@@ -29,6 +40,7 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
     const line = getLineFromPoints(point0, point1);
     imageLines.push(line);
   }
+  if (debug_level >= 2) console.log("[dufour-peyton-intersection] imageLines:", imageLines);
 
   // collapse geometry down to a list of edges
   // necessary for multi-part geometries
@@ -159,13 +171,17 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
       }
     }
 
-    intersectionsByRow.map((segmentsInRow, row_index) => {
+    const half_pixel_width = pixel_width / 2;
+    const snap = prepareSnap(raster_xmin, pixel_width);
+
+    intersectionsByRow.forEach((segmentsInRow, row_index) => {
       if (segmentsInRow.length > 0) {
         const clusters = clusterLineSegments(segmentsInRow, numberOfEdges);
         const categorized = clusters.map(categorizeIntersection);
         const [throughs, nonthroughs] = partition(categorized, item => item.through);
 
         if (throughs.length % 2 === 1) {
+          if (debug_level >= 1) console.error("throughs:", JSON.stringify(throughs));
           throw Error("throughs.length for " + row_index + " is odd with " + throughs.length);
         }
 
@@ -190,18 +206,22 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
         insides.forEach(pair => {
           const [xmin, xmax] = pair;
 
-          //convert left and right to image pixels
-          const left = Math.round((xmin - (raster_xmin + 0.5 * pixel_width)) / pixel_width);
-          const right = Math.round((xmax - (raster_xmin + 0.5 * pixel_width)) / pixel_width);
+          if (xmax - xmin < half_pixel_width) return;
+
+          // snap [xmin, xmax] in srs to raster coordinates
+          const [left, right] = snap(pair);
+
+          // intersection doesn't take up more than half of a pixel
+          if (left === right) return;
 
           // skip because segment is beyond the right edge of the raster
-          if (left >= raster_width) return;
+          if (left > raster_width) return;
 
           // skip because segment is beyond the left edge of the raster
-          if (right < 0) return;
+          if (right <= 0) return;
 
           const start_column_index = Math.max(left, 0);
-          const end_column_index = Math.min(right, raster_width - 1);
+          const end_column_index = Math.min(right - 1, raster_width - 1);
 
           if (per_row_segment) {
             per_row_segment({
