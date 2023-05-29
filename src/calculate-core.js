@@ -137,7 +137,11 @@ module.exports = function calculateCore({ raster_bbox, raster_height, raster_wid
         // the edge line segment. If it is, add the intersection to the
         // list of intersections at the corresponding index for that row
         // in intersectionsByRow
-        if (xminOnLine && xmaxOnLine && (horizontal || (xminOnLine >= startLng && xmaxOnLine <= endLng && imageLineY <= edgeYMax && imageLineY >= edgeYMin))) {
+        if (
+          xminOnLine !== undefined &&
+          xmaxOnLine !== undefined &&
+          (horizontal || (xminOnLine >= startLng && xmaxOnLine <= endLng && imageLineY <= edgeYMax && imageLineY >= edgeYMin))
+        ) {
           intersectionsByRow[j].push({
             direction,
             index: i,
