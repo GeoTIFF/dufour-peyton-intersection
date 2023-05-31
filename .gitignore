@@ -107,5 +107,7 @@ dist
 pnpm-lock.yaml
 .pnpm-store/
 *bak*
+*.cog
 *.tif
 *.tiff
+test-output/

@@ -6,6 +6,20 @@ const findAndRead = require("find-and-read");
 const getPreciseBoundingBox = require("geotiff-precise-bbox");
 const from = require("geotiff-from");
 const reprojectGeoJSON = require("reproject-geojson");
+const count = require("fast-counter");
+const writePng = require("@danieljdufour/write-png");
+const { clip, update } = require("xdim");
+
+const get_most_common = arr => {
+  const entries = Object.entries(count(arr, { depth: 1 }));
+  const total = entries.reduce((acc, it) => acc + it[1], 0);
+  entries.forEach(it => it.push(it[1] / total));
+  return entries.sort((a, b) => Math.sign(b[1] - a[1]))[0];
+};
+
+const writeImage = (filename, data, [width, height]) => {
+  writePng(`./test-output/${filename}`, data, { width, height });
+};
 
 const {
   calculateCore,
@@ -22,8 +36,31 @@ const {
   getLineFromPoints,
   mergeRanges,
   partition,
-  range
+  prepareSnap,
+  range,
+  roundDown
 } = require("./src/index.js");
+
+test("roundDown", ({ eq }) => {
+  eq(roundDown(0), 0);
+  eq(roundDown(-0.5), -1);
+  eq(roundDown(-10.49), -10);
+  eq(roundDown(1.234), 1);
+  eq(roundDown(1.5), 1);
+});
+
+test("prepareSnap", ({ eq }) => {
+  const snap = prepareSnap(0, 5);
+  eq(snap([-4.5, 5]), [-1, 1]);
+  eq(snap([-2.5, 5]), [-1, 1]);
+  eq(snap([-1, 5]), [0, 1]);
+  eq(snap([0, 5]), [0, 1]);
+  eq(snap([0, 2]), [0, 0]); // takes up less than 50% of pixel width
+  eq(snap([0, 2.5]), [0, 1]);
+  eq(snap([1.5, 2.5]), [0, 1]);
+  eq(snap([13, 20]), [3, 4]);
+  eq(snap([15, 20]), [3, 4]);
+});
 
 test("range", ({ eq }) => {
   eq(range(0), []);
@@ -276,6 +313,7 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
   const geotiff = await from(arrayBuffer);
   const image = await geotiff.getImage();
   const precise_bbox = getPreciseBoundingBox(image);
+  const raster_values = await geotiff.readRasters();
   const raster_bbox = precise_bbox.map(str => Number(str));
   const raster_height = image.getHeight();
   const raster_width = image.getWidth();
@@ -286,10 +324,16 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
 
   const geojson = JSON.parse(findAndRead("sri-lanka.geojson", { encoding: "utf-8" }));
 
+  const MOST_COMMON_VALUE = "65,65,67,255";
+
   let minRow = Infinity;
   let maxRow = -Infinity;
   let minCol = Infinity;
   let maxCol = -Infinity;
+
+  let values = [];
+
+  const sizes = { band: 4, column: raster_width, row: raster_height };
 
   calculateCore({
     raster_bbox,
@@ -303,9 +347,38 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
       if (rowIndex > maxRow) maxRow = rowIndex;
       if (columnIndex < minCol) minCol = columnIndex;
       if (columnIndex > maxCol) maxCol = columnIndex;
+      // hide raster values, by setting 4th band value to zero
+      values = values.concat(
+        clip({
+          data: raster_values,
+          flat: true,
+          layout: "[band][row,column]",
+          rect: {
+            band: [0, 3],
+            column: [columnIndex, columnIndex],
+            row: [rowIndex, rowIndex]
+          },
+          sizes
+        }).data.join(",")
+      );
+      update({
+        data: raster_values,
+        layout: "[band][row,column]",
+        point: {
+          band: 3,
+          row: rowIndex,
+          column: columnIndex
+        },
+        sizes,
+        value: 0
+      });
     },
     geometry_bbox: getBoundingBox(geojson)
   });
+
+  eq(get_most_common(values)[0], MOST_COMMON_VALUE);
+
+  writeImage("gadas-export-4326-sri-lanka", raster_values, [raster_width, raster_height]);
 
   const EXPECTED_MIN_ROW = 91;
   const EXPECTED_MAX_ROW = 266;
@@ -316,6 +389,7 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
   eq(maxRow, EXPECTED_MAX_ROW);
   eq(minCol, EXPECTED_MIN_COL);
   eq(maxCol, EXPECTED_MAX_COL);
+  // eq(most_common_value, []);
 
   // should have same results if project geojson onto raster's coordinate space
   const polygon = getPolygons(geojson)[0];
@@ -430,4 +504,120 @@ test("geometry extends beyond left edge of raster", ({ eq }) => {
       eq(start <= end, true);
     });
   });
+});
+
+test("rectangular hole", ({ eq }) => {
+  const data = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0]
+  ];
+
+  let pixel_count = 0;
+  calculateCore({
+    debug_level: 0,
+    per_pixel: ({ row, column }) => {
+      data[row][column] = 255;
+      pixel_count++;
+    },
+    raster_bbox: [0, 0, 20, 20],
+    raster_height: 4,
+    raster_width: 4,
+    pixel_height: 5,
+    pixel_width: 5,
+    geometry: {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [0, 0],
+            [20, 0],
+            [20, 20],
+            [0, 20],
+            [0, 0]
+          ],
+          [
+            [5, 5],
+            [5, 15],
+            [15, 15],
+            [15, 5],
+            [5, 5]
+          ]
+        ]
+      },
+      bbox: [0, 0, 20, 20]
+    }
+  });
+  eq(pixel_count, 12);
+  writeImage("rect-hole", [data, data, data], [4, 4]);
+});
+
+test("hole support: Sri Lanka test case", async ({ eq }) => {
+  // same crs as geojson
+  const arrayBuffer = await findAndRead("gadas-export-4326.tif");
+  const geotiff = await from(arrayBuffer);
+  const raster_values = await geotiff.readRasters();
+  const image = await geotiff.getImage();
+  const precise_bbox = getPreciseBoundingBox(image);
+  const raster_bbox = precise_bbox.map(str => Number(str));
+  const raster_height = image.getHeight();
+  const raster_width = image.getWidth();
+
+  const [resolutionX, resolutionY] = image.getResolution();
+  const pixel_width = Math.abs(resolutionX);
+  const pixel_height = Math.abs(resolutionY);
+
+  // geojson with box and hole cut out for Sri Lanka
+  const geojson = JSON.parse(findAndRead("hole.geojson", { encoding: "utf-8" }));
+
+  let minRow = Infinity;
+  let maxRow = -Infinity;
+  let minCol = Infinity;
+  let maxCol = -Infinity;
+
+  calculateCore({
+    raster_bbox,
+    raster_height,
+    raster_width,
+    pixel_height,
+    pixel_width,
+    geometry: geojson,
+    per_pixel: ({ row: rowIndex, column: columnIndex }) => {
+      if (rowIndex < minRow) minRow = rowIndex;
+      if (rowIndex > maxRow) maxRow = rowIndex;
+      if (columnIndex < minCol) minCol = columnIndex;
+      if (columnIndex > maxCol) maxCol = columnIndex;
+      // hide raster values, by setting 4th band value to zero
+      update({
+        data: raster_values,
+        layout: "[band][row,column]",
+        point: {
+          band: 3,
+          row: rowIndex,
+          column: columnIndex
+        },
+        sizes: {
+          band: 4,
+          row: raster_height,
+          column: raster_width
+        },
+        value: 0
+      });
+    },
+    geometry_bbox: getBoundingBox(geojson)
+  });
+  const EXPECTED_MIN_ROW = 83;
+  const EXPECTED_MAX_ROW = 310;
+  const EXPECTED_MIN_COL = 403;
+  const EXPECTED_MAX_COL = 584;
+
+  eq(minRow, EXPECTED_MIN_ROW);
+  eq(maxRow, EXPECTED_MAX_ROW);
+  eq(minCol, EXPECTED_MIN_COL);
+  eq(maxCol, EXPECTED_MAX_COL);
+
+  writeImage("hole", raster_values, [raster_width, raster_height]);
 });

@@ -4,6 +4,7 @@ Reference Implementation of the Dufour-Peyton Intersection Algorithm.  Calculate
 ## features
 - supports very large rasters because speed determined by number of geometry vertices
 - avoids double counting pixels in overlapping polygons
+- supports multi-polygons
 
 ## install
 ```bash
