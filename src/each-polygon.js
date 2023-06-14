@@ -4,6 +4,8 @@ const getDepth = require("get-depth");
 module.exports = function eachPolygon(geojson, callback) {
   if (geojson.type === "FeatureCollection") {
     geojson.features.forEach(feature => eachPolygon(feature, callback));
+  } else if (geojson.type === "GeometryCollection") {
+    geojson.geometries.forEach(geometry => eachPolygon(geometry, callback));
   } else if (geojson.type === "Feature") {
     eachPolygon(geojson.geometry, callback);
   } else if (geojson.type === "Polygon") {
