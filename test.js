@@ -32,8 +32,6 @@ const {
   eachEdge,
   getBoundingBox,
   getPolygons,
-  getIntersectionOfTwoLines,
-  getLineFromPoints,
   mergeRanges,
   partition,
   prepareSnap,
@@ -185,37 +183,6 @@ test("merging of index ranges", ({ eq }) => {
   ];
   merged = mergeRanges(original);
   eq(JSON.stringify(merged), "[[0,10],[21,40]]");
-});
-
-test("getting line from points and calculating intersections of two lines", ({ eq }) => {
-  const edge1 = [
-    [32.87069320678728, 34.66652679443354],
-    [32.87069320678728, 34.66680526733393]
-  ]; // vertical
-  const edge2 = [
-    [30, 34.70833333333334],
-    [40, 34.70833333333334]
-  ];
-  const line1 = getLineFromPoints(edge1[0], edge1[1]);
-  const line2 = getLineFromPoints(edge2[0], edge2[1]);
-  let intersection = getIntersectionOfTwoLines(line1, line2);
-  eq(intersection.x, 32.87069320678728);
-  eq(intersection.y, 34.70833333333334);
-
-  // this test fails because of floating point arithmetic
-  const verticalEdge = [
-    [19.59097290039091, 29.76190948486328],
-    [19.59097290039091, 41.76180648803728]
-  ];
-  const horizontalEdge = [
-    [15, 41.641892470257524],
-    [25, 41.641892470257524]
-  ];
-  const verticalLine = getLineFromPoints(verticalEdge[0], verticalEdge[1]);
-  const horizontalLine = getLineFromPoints(horizontalEdge[0], horizontalEdge[1]);
-  intersection = getIntersectionOfTwoLines(verticalLine, horizontalLine);
-  //eq(intersection.x, 19.59097290039091);
-  //eq(intersection.y, 41.641892470257524);
 });
 
 test("Get Bounding Box of GeoJSON that has MultiPolygon Geometry (i.e., multiple rings)", async ({ eq }) => {

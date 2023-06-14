@@ -8,8 +8,6 @@ const couple = require("./couple.js");
 const getBoundingBox = require("./get-bounding-box.js");
 const getPolygons = require("./get-polygons.js");
 const eachEdge = require("./each-edge.js");
-const getIntersectionOfTwoLines = require("./get-intersection-of-two-lines.js");
-const getLineFromPoints = require("./get-line-from-points.js");
 const mergeRanges = require("./merge-ranges.js");
 const partition = require("./partition.js");
 const prepareSnap = require("./prepare-snap.js");
@@ -26,8 +24,6 @@ const dufour_peyton_intersection = {
   couple,
   eachEdge,
   getBoundingBox,
-  getIntersectionOfTwoLines,
-  getLineFromPoints,
   getPolygons,
   mergeRanges,
   partition,

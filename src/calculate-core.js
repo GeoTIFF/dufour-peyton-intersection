@@ -1,10 +1,8 @@
-const getLineFromPoints = require("./get-line-from-points.js");
 const categorizeIntersection = require("./categorize-intersection.js");
 const clamp = require("./clamp.js");
 const couple = require("./couple.js");
 const clusterLineSegments = require("./cluster-line-segments.js");
 const getEdges = require("./get-edges.js");
-const getIntersectionOfTwoLines = require("./get-intersection-of-two-lines.js");
 const getPolygons = require("./get-polygons.js");
 const mergeRanges = require("./merge-ranges.js");
 const partition = require("./partition.js");
@@ -24,22 +22,6 @@ module.exports = function calculateCore({
 }) {
   const [raster_xmin, raster_ymin, raster_xmax, raster_ymax] = raster_bbox;
 
-  // iterate through image rows and convert each one to a line
-  // running through the middle of the row
-  const imageLines = [];
-
-  if (raster_height === 0) return;
-
-  for (let y = 0; y < raster_height; y++) {
-    const lat = raster_ymax - pixel_height * y - pixel_height / 2;
-
-    // use that point, plus another point along the same latitude to
-    // create a line
-    const point0 = [raster_xmin, lat];
-    const point1 = [raster_xmin + 1, lat];
-    const line = getLineFromPoints(point0, point1);
-    imageLines.push(line);
-  }
   if (debug_level >= 2) console.log("[dufour-peyton-intersection] imageLines:", imageLines);
 
   // collapse geometry down to a list of edges
@@ -63,10 +45,9 @@ module.exports = function calculateCore({
       const direction = Math.sign(y2 - y1);
       const horizontal = y1 === y2;
       const vertical = x1 === x2;
+      const slope = (y2 - y1) / (x2 - x1);
 
       const edgeY = y1;
-
-      const edgeLine = getLineFromPoints(startPoint, endPoint);
 
       const edgeYMin = Math.min(y1, y2);
       const edgeYMax = Math.max(y1, y2);
@@ -102,16 +83,7 @@ module.exports = function calculateCore({
       // iterate through image lines within the change in y of
       // the edge line and find all intersections
       for (let j = rowStart; j < rowEnd + 1; j++) {
-        const imageLine = imageLines[j];
-
-        if (imageLine === undefined) {
-          console.error("j:", j);
-          console.error("imageLines:", imageLines);
-          throw Error("imageLines");
-        }
-
-        // because you know x is zero in ax + by = c, so by = c and b = -1, so -1 * y = c or y = -1 * c
-        const imageLineY = -1 * imageLine.c;
+        const imageLineY = raster_ymax - pixel_height * j - pixel_height / 2;
 
         const startsOnLine = y1 === imageLineY;
         const endsOnLine = y2 === imageLineY;
@@ -139,7 +111,7 @@ module.exports = function calculateCore({
           xminOnLine = xmaxOnLine = x2;
         } else {
           try {
-            xminOnLine = xmaxOnLine = getIntersectionOfTwoLines(edgeLine, imageLine).x;
+            xminOnLine = xmaxOnLine = x1 + (imageLineY - y1) / slope;
           } catch (error) {
             throw error;
           }
