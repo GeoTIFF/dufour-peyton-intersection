@@ -30,6 +30,7 @@ const {
   cluster,
   clusterLineSegments,
   eachEdge,
+  eachPair,
   getBoundingBox,
   getPolygons,
   mergeRanges,
@@ -38,6 +39,48 @@ const {
   range,
   roundDown
 } = require("./src/index.js");
+
+test("eachPair", ({ eq }) => {
+  const coords = [
+    [78, 10],
+    [78, 5],
+    [82, 5],
+    [82, 10],
+    [78, 10]
+  ];
+  const actual = [];
+  eachPair(coords, (pair, ipair) => actual.push([ipair, pair]));
+  eq(actual, [
+    [
+      0,
+      [
+        [78, 10],
+        [78, 5]
+      ]
+    ],
+    [
+      1,
+      [
+        [78, 5],
+        [82, 5]
+      ]
+    ],
+    [
+      2,
+      [
+        [82, 5],
+        [82, 10]
+      ]
+    ],
+    [
+      3,
+      [
+        [82, 10],
+        [78, 10]
+      ]
+    ]
+  ]);
+});
 
 test("roundDown", ({ eq }) => {
   eq(roundDown(0), 0);

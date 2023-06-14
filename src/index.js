@@ -8,6 +8,7 @@ const couple = require("./couple.js");
 const getBoundingBox = require("./get-bounding-box.js");
 const getPolygons = require("./get-polygons.js");
 const eachEdge = require("./each-edge.js");
+const eachPair = require("./each-pair.js");
 const mergeRanges = require("./merge-ranges.js");
 const partition = require("./partition.js");
 const prepareSnap = require("./prepare-snap.js");
@@ -23,6 +24,7 @@ const dufour_peyton_intersection = {
   clusterLineSegments,
   couple,
   eachEdge,
+  eachPair,
   getBoundingBox,
   getPolygons,
   mergeRanges,
