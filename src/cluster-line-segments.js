@@ -12,7 +12,8 @@ module.exports = function clusterLineSegments(lineSegments, numberOfEdges, debug
       const lastCluster = clusters[clusters.length - 1];
       const lastSegment = lastCluster[lastCluster.length - 1];
 
-      if (lastSegment.index === numberOfEdges - 1 && firstSegment.index === 0 && lastSegment.endsOnLine) {
+      // determine if the last segment should be added to the first
+      if (lastSegment.last_edge_in_ring && firstSegment.index === 0 && lastSegment.endsOnLine) {
         clusters[0] = clusters.pop().concat(firstCluster);
       }
     }

@@ -10,6 +10,12 @@ const count = require("fast-counter");
 const writePng = require("@danieljdufour/write-png");
 const { clip, update } = require("xdim");
 
+const getPolygons = it => {
+  const polygons = [];
+  eachPolygon(it, polygon => polygons.push(polygon));
+  return polygons;
+};
+
 const get_most_common = arr => {
   const entries = Object.entries(count(arr, { depth: 1 }));
   const total = entries.reduce((acc, it) => acc + it[1], 0);
@@ -29,10 +35,9 @@ const {
   clamp,
   cluster,
   clusterLineSegments,
-  eachEdge,
   eachPair,
+  eachPolygon,
   getBoundingBox,
-  getPolygons,
   mergeRanges,
   partition,
   prepareSnap,
@@ -186,8 +191,13 @@ test("clustering", ({ eq }) => {
 });
 
 test("clustering of line segments", ({ eq }) => {
-  const segments = [{ endsOffLine: true, index: 0 }, { endsOffLine: false }, { endsOffLine: false }, { endsOffLine: false, endsOnLine: true, index: 99 }];
-  const computed = clusterLineSegments(segments, 100, true);
+  const segments = [
+    { endsOffLine: true, index: 0 },
+    { endsOffLine: false },
+    { endsOffLine: false },
+    { endsOffLine: false, endsOnLine: true, last_edge_in_ring: true, index: 99 }
+  ];
+  const computed = clusterLineSegments(segments, true);
   computedNumberOfClusters = computed.length;
   eq(computedNumberOfClusters, 1);
   eq(computed[0].length, 4);
@@ -233,51 +243,6 @@ test("Get Bounding Box of GeoJSON that has MultiPolygon Geometry (i.e., multiple
   const country = JSON.parse(str);
   const bbox = getBoundingBox(country.geometry.coordinates);
   eq(bbox, [32.76010131835966, 34.56208419799816, 33.92147445678711, 35.118995666503906]);
-});
-
-test("getting line segments", ({ eq }) => {
-  const str = fs.readFileSync("./data/sri-lanka.geojson", "utf-8");
-  const coords = JSON.parse(str).features[0].geometry.coordinates;
-  const edges = [];
-  eachEdge(coords, edge => edges.push(edge));
-  eq(edges, [
-    [
-      [81.7879590188914, 7.523055324733164],
-      [81.63732221876059, 6.481775214051921]
-    ],
-    [
-      [81.63732221876059, 6.481775214051921],
-      [81.21801964714433, 6.197141424988288]
-    ],
-    [
-      [81.21801964714433, 6.197141424988288],
-      [80.34835696810441, 5.968369859232155]
-    ],
-    [
-      [80.34835696810441, 5.968369859232155],
-      [79.87246870312853, 6.76346344647493]
-    ],
-    [
-      [79.87246870312853, 6.76346344647493],
-      [79.69516686393513, 8.200843410673386]
-    ],
-    [
-      [79.69516686393513, 8.200843410673386],
-      [80.14780073437964, 9.824077663609557]
-    ],
-    [
-      [80.14780073437964, 9.824077663609557],
-      [80.83881798698656, 9.268426825391188]
-    ],
-    [
-      [80.83881798698656, 9.268426825391188],
-      [81.30431928907177, 8.56420624433369]
-    ],
-    [
-      [81.30431928907177, 8.56420624433369],
-      [81.7879590188914, 7.523055324733164]
-    ]
-  ]);
 });
 
 test("get polygons for Akrotiri and Dhekelia", async ({ eq }) => {
