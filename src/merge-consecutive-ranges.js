@@ -8,7 +8,7 @@ module.exports = function mergeConsecutiveRanges(ranges) {
       const tempRange = ranges[i];
       const [start, end] = tempRange;
       if (start <= previousEnd + 1) {
-        result[result.length - 1][1] = end;
+        result[result.length - 1][1] = Math.max(previousEnd, end);
       } else {
         result.push(tempRange);
       }
