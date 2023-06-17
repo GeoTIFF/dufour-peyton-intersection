@@ -29,6 +29,14 @@
     "src/partition.js",
     "src/prepare-snap.js",
     "src/range.js",
+    "src/range/compare.js",
+    "src/range/contains.js",
+    "src/range/cut.js",
+    "src/range/merge-consecutive.js",
+    "src/range/merge.js",
+    "src/range/overlaps.js",
+    "src/range/sort.js",
+    "src/range/validate.js",
     "src/round-down.js"
   ],
   "scripts": {
