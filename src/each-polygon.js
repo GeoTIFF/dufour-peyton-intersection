@@ -22,6 +22,8 @@ module.exports = function eachPolygon(geojson, callback) {
       });
     } else if (depth === 3) {
       callback(geojson);
+    } else if (depth === 2) {
+      callback([geojson]);
     }
   }
 };
