@@ -111,3 +111,5 @@ pnpm-lock.yaml
 *.tif
 *.tiff
 test-output/
+Pipfile
+Pipfile.lock
