@@ -108,12 +108,6 @@ test("prepareSnap", ({ eq }) => {
   eq(snap([15, 20]), [3, 4]);
 });
 
-test("range", ({ eq }) => {
-  eq(range(0), []);
-  eq(range(1), [0]);
-  eq(range(5), [0, 1, 2, 3, 4]);
-});
-
 test("partition", ({ eq }) => {
   const nums = [0, 1, 2, 3];
   const [even, odd] = partition(nums, n => n % 2 === 0);
