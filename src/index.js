@@ -8,15 +8,21 @@ const couple = require("./couple.js");
 const getBoundingBox = require("./get-bounding-box.js");
 const eachPair = require("./each-pair.js");
 const eachPolygon = require("./each-polygon.js");
-const mergeRanges = require("./merge-ranges.js");
+const mergeRanges = require("./range/merge.js");
+const mergeConsecutiveRanges = require("./range/merge-consecutive.js");
 const partition = require("./partition.js");
 const prepareSnap = require("./prepare-snap.js");
-const range = require("./range.js");
+const rangeContains = require("./range/contains.js");
+const rangeCut = require("./range/cut.js");
+const carveHoles = require("./range/multicut.js");
+const rangeOverlap = require("./range/overlaps.js");
 const roundDown = require("./round-down.js");
+const rangeSort = require("./range/sort.js");
 
 const dufour_peyton_intersection = {
   calculate,
   calculateCore,
+  carveHoles,
   categorizeIntersection,
   clamp,
   cluster,
@@ -26,9 +32,13 @@ const dufour_peyton_intersection = {
   eachPolygon,
   getBoundingBox,
   mergeRanges,
+  mergeConsecutiveRanges,
   partition,
   prepareSnap,
-  range,
+  rangeContains,
+  rangeCut,
+  rangeOverlap,
+  rangeSort,
   roundDown
 };
 

@@ -1,51 +1,49 @@
-const calculateCallbacks = require("./calculate-core.js");
-const checkRows = require("./check-rows.js");
-const mergeConsecutiveRanges = require("./merge-consecutive-ranges.js");
+const getPolygons = require("./get-polygons.js");
+const mergeConsecutiveRanges = require("./range/merge-consecutive.js");
+const rangeSort = require("./range/sort.js");
+const calculatePolygon = require("./calculate-polygon.js");
 
-module.exports = function calculate({
-  debug = false,
-  raster_bbox,
-  raster_height,
-  raster_width,
-  pixel_height,
-  pixel_width,
-  geometry,
-  per_pixel,
-  per_row_segment
-}) {
-  const [xmin, ymin, xmax, ymax] = raster_bbox;
-  if (pixel_height === undefined || pixel_height === null) pixel_height = (ymax - ymin) / raster_height;
-  if (pixel_width === undefined || pixel_width === null) pixel_width = (xmax - xmin) / raster_width;
+module.exports = function calculate({ geometry, raster_height, per_pixel, per_row_segment, ...rest }) {
+  polys = getPolygons(geometry);
 
-  const rows = new Array(raster_height);
+  // collect inside segments by row for each polygons
+  const inside_rows_by_polygon = polys.map(polygon =>
+    calculatePolygon({
+      polygon,
+      raster_height,
+      ...rest
+    })
+  );
 
-  calculateCallbacks({
-    raster_bbox,
-    raster_height,
-    raster_width,
-    pixel_height,
-    pixel_width,
-    geometry,
-    per_pixel,
-    per_row_segment: ({ row, columns }) => {
-      if (!rows[row]) rows[row] = [];
-      rows[row].push(columns);
-      if (per_row_segment) per_row_segment({ row, columns });
-    }
-  });
-
-  for (let irow = 0; irow < rows.length; irow++) {
-    const ranges = rows[irow];
-    if (ranges) {
-      // sort from left to right
-      ranges.sort((a, b) => (a === b ? a[1] - b[1] : a[0] - b[0]));
-
-      // replace existing row with sorted and merged one
-      rows[irow] = mergeConsecutiveRanges(ranges);
-    }
+  const results = [];
+  for (let i = 0; i < raster_height; i++) {
+    const insides = inside_rows_by_polygon
+      .map(polygon_rows => polygon_rows[i])
+      .filter(it => it !== undefined && it.length > 0)
+      .flat();
+    const sorted = rangeSort(insides);
+    const merged = mergeConsecutiveRanges(sorted);
+    results.push(merged);
   }
 
-  if (debug) checkRows(insides);
+  if (per_row_segment || per_pixel) {
+    results.forEach((row_segments, row_index) => {
+      if (row_segments) {
+        row_segments.forEach((seg, iseg) => {
+          if (per_row_segment) {
+            per_row_segment({ row: row_index, columns: seg });
+          }
 
-  return { rows };
+          if (per_pixel) {
+            const [start_column_index, end_column_index] = seg;
+            for (let column_index = start_column_index; column_index <= end_column_index; column_index++) {
+              per_pixel({ row: row_index, column: column_index });
+            }
+          }
+        });
+      }
+    });
+  }
+
+  return { rows: results };
 };

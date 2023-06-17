@@ -1,3 +1,5 @@
+// categorize line segments that intersect a horizontal line
+// categorize as through or not
 module.exports = function categorizeIntersection(segments) {
   try {
     let through, xmin, xmax;
