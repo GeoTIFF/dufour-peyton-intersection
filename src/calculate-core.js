@@ -20,8 +20,6 @@ module.exports = function calculateCore({
 }) {
   const [raster_xmin, raster_ymin, raster_xmax, raster_ymax] = raster_bbox;
 
-  if (debug_level >= 2) console.log("[dufour-peyton-intersection] imageLines:", imageLines);
-
   // iterate through the list of polygon vertices, convert them to
   // lines, and compute the intersections with each image row
   const intersectionsByRow = [];
@@ -120,7 +118,8 @@ module.exports = function calculateCore({
           direction,
           index: iedge,
           edge,
-          last_edge_in_ring: iedge === ring.length - 1,
+          // e.g: if there are 5 points (last repeated), there are 4 edges, with the last index being 3 (zero-indexed)
+          last_edge_in_ring: iedge === ring.length - 2,
           endsOnLine,
           endsOffLine,
           horizontal,

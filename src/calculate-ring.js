@@ -3,7 +3,7 @@ const checkRows = require("./check-rows.js");
 const mergeConsecutiveRanges = require("./range/merge-consecutive.js");
 const rangeSort = require("./range/sort.js");
 
-module.exports = function calculateRing({ debug = false, raster_bbox, raster_height, raster_width, pixel_height, pixel_width, ring }) {
+module.exports = function calculateRing({ debug_level = 0, raster_bbox, raster_height, raster_width, pixel_height, pixel_width, ring }) {
   const [xmin, ymin, xmax, ymax] = raster_bbox;
   if (pixel_height === undefined || pixel_height === null) pixel_height = (ymax - ymin) / raster_height;
   if (pixel_width === undefined || pixel_width === null) pixel_width = (xmax - xmin) / raster_width;
@@ -12,6 +12,7 @@ module.exports = function calculateRing({ debug = false, raster_bbox, raster_hei
   for (let i = 0; i < raster_height; i++) rows.push([]);
 
   calculateCore({
+    debug_level,
     raster_bbox,
     raster_height,
     raster_width,
@@ -34,7 +35,7 @@ module.exports = function calculateRing({ debug = false, raster_bbox, raster_hei
     }
   }
 
-  if (debug) checkRows(insides);
+  if (debug_level >= 2) checkRows(rows);
 
   return rows;
 };

@@ -51,6 +51,26 @@ const {
   rangeSort
 } = require("./src/index.js");
 
+test("edge case: global box", ({ eq }) => {
+  calculate({
+    debug_level: 4,
+    raster_bbox: [-180, -90, 180, 90],
+    raster_height: 2160,
+    raster_width: 4320,
+    pixel_height: 0.08333333333333333,
+    pixel_width: 0.08333333333333333,
+    geometry: [
+      [
+        [-179.95833333333334, -89.95833333333333],
+        [179.95833333333334, -89.95833333333333],
+        [179.95833333333334, 89.95833333333333],
+        [-179.95833333333334, 89.95833333333333],
+        [-179.95833333333334, -89.95833333333333]
+      ]
+    ]
+  });
+});
+
 test("carveHoles", ({ eq }) => {
   eq(
     carveHoles(
