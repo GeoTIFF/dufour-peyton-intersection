@@ -28,7 +28,7 @@ const get_most_common = arr => {
 };
 
 const writeImage = (filename, data, [width, height]) => {
-  writePng(`./test-output/${filename}`, data, { width, height });
+  writePng(`./test-output/${filename.replaceAll(" ", "_")}`, data, { width, height });
 };
 
 const {
@@ -403,14 +403,13 @@ test("merging of consecutive ranges", ({ eq }) => {
 });
 
 test("Get Bounding Box of GeoJSON that has MultiPolygon Geometry (i.e., multiple rings)", async ({ eq }) => {
-  const str = fs.readFileSync("./data/Akrotiri-and-Dhekelia.geojson", "utf-8");
-  const country = JSON.parse(str);
+  const country = loadVector("Akrotiri and Dhekelia.geojson");
   const bbox = getBoundingBox(country.geometry.coordinates);
   eq(bbox, [32.76010131835966, 34.56208419799816, 33.92147445678711, 35.118995666503906]);
 });
 
 test("get polygons for Akrotiri and Dhekelia", async ({ eq }) => {
-  const geojson = loadVector("Akrotiri-and-Dhekelia.geojson");
+  const geojson = loadVector("Akrotiri and Dhekelia.geojson");
   const polygons = getPolygons(geojson);
   eq(polygons.length, 2); // number of polygons
   eq(polygons[0].length, 1); // number of rings in first polygon
@@ -892,7 +891,61 @@ test("hole support: Sri Lanka test case", async ({ eq }) => {
   writeImage("hole", raster_values, [raster_width, raster_height]);
 });
 
-test("Ukraine", async ({ eq }) => {
+test("Akrotiri and Dhekelia", async ({ eq }) => {
+  // same crs as geojson
+  const arrayBuffer = await findAndRead("gadas-cyprus.tif");
+  const geotiff = await from(arrayBuffer);
+  const raster_values = await geotiff.readRasters();
+  const image = await geotiff.getImage();
+  const precise_bbox = getPreciseBoundingBox(image);
+  const raster_bbox = precise_bbox.map(str => Number(str));
+  const raster_height = image.getHeight();
+  const raster_width = image.getWidth();
+
+  const [resolutionX, resolutionY] = image.getResolution();
+  const pixel_width = Math.abs(resolutionX);
+  const pixel_height = Math.abs(resolutionY);
+
+  // geojson with box and hole cut out for Sri Lanka
+  const geojson = loadVector("Akrotiri and Dhekelia.geojson");
+
+  let count = 0;
+
+  calculate({
+    raster_bbox,
+    raster_height,
+    raster_width,
+    pixel_height,
+    pixel_width,
+    geometry: geojson,
+    per_pixel: ({ row: rowIndex, column: columnIndex }) => {
+      count++;
+      [0, 255, 0].forEach((value, bandIndex) => {
+        update({
+          data: raster_values,
+          layout: "[band][row,column]",
+          point: {
+            band: bandIndex,
+            row: rowIndex,
+            column: columnIndex
+          },
+          sizes: {
+            band: 4,
+            row: raster_height,
+            column: raster_width
+          },
+          value
+        });
+      });
+    }
+  });
+
+  eq(count, 818);
+
+  writeImage("Akrotiri and Dhekelia", raster_values, [raster_width, raster_height]);
+});
+
+test("countries", async ({ eq }) => {
   // same crs as geojson
   const arrayBuffer = await findAndRead("spam2005v3r2_harvested-area_wheat_total.tiff");
   const geotiff = await from(arrayBuffer);
@@ -914,44 +967,56 @@ test("Ukraine", async ({ eq }) => {
 
   const raster_values = [clone(band), clone(band), clone(band), new Array(band.length).fill(255)];
 
-  // geojson with box and hole cut out for Sri Lanka
-  const geojson = loadVector("GADM-Ukraine.geojson");
+  [
+    // set nodata to -1, so we get a count of all pixels including no data
+    // pipenv run sh -c "fio cat ./data/geojson-test-data/gadm/afghanistan.geojson | rio zonalstats -r ./data/spam2005v3r2_harvested-area_wheat_total.tiff --nodata -1 --stats count | jq .features[0].properties._count"
+    ["Afghanistan", 9027], // rasterstats says 9029
+    ["Akrotiri and Dhekelia", null],
+    ["Croatia", 916], // rasterstats says 935
+    ["Cyprus", 81],
+    ["Jamaica", 133], // rasterstats says 134
+    ["Lebanon", 145],
+    ["Macedonia", 383],
+    ["Nicaragua", 1531], // rasterstats says 1536
+    ["Ukraine", 10644], // rasterstats says 10655
+    ["Uruguay", 2461] // rasterstats says 2462
+  ].forEach(([country, expected_count]) => {
+    // geojson with box and hole cut out for Sri Lanka
+    const geojson = loadVector(country + ".geojson");
 
-  let count = 0;
+    let count = 0;
 
-  calculate({
-    raster_bbox,
-    raster_height,
-    raster_width,
-    pixel_height,
-    pixel_width,
-    geometry: geojson,
-    per_pixel: ({ row: rowIndex, column: columnIndex }) => {
-      count++;
-      [255, 255, 0].forEach((value, bandIndex) => {
-        update({
-          data: raster_values,
-          layout: "[band][row,column]",
-          point: {
-            band: bandIndex,
-            row: rowIndex,
-            column: columnIndex
-          },
-          sizes: {
-            band: 4,
-            row: raster_height,
-            column: raster_width
-          },
-          value
+    calculate({
+      raster_bbox,
+      raster_height,
+      raster_width,
+      pixel_height,
+      pixel_width,
+      geometry: geojson,
+      per_pixel: ({ row: rowIndex, column: columnIndex }) => {
+        count++;
+        [0, 255, 0].forEach((value, bandIndex) => {
+          update({
+            data: raster_values,
+            layout: "[band][row,column]",
+            point: {
+              band: bandIndex,
+              row: rowIndex,
+              column: columnIndex
+            },
+            sizes: {
+              band: 4,
+              row: raster_height,
+              column: raster_width
+            },
+            value
+          });
         });
-      });
-    }
+      }
+    });
+
+    if (expected_count !== null) eq(count, expected_count);
   });
 
-  // set nodata to -1, so we get a count of all pixels including no data
-  // pipenv run sh -c "fio cat ./data/gadm/geojsons/Ukraine.geojson | rio zonalstats -r ./data/mapspam/spam2005v3r2_harvested-area_wheat_total.tiff --nodata -1 --stats count | jq .features[0].properties._count"
-  // 10655
-  eq(count, 10644);
-
-  writeImage("ukraine", raster_values, [raster_width, raster_height]);
+  writeImage("countries", raster_values, [raster_width, raster_height]);
 });

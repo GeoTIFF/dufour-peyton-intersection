@@ -113,3 +113,5 @@ pnpm-lock.yaml
 test-output/
 Pipfile
 Pipfile.lock
+data/ukraine-rasterstats-mask.png
+data/geojson-test-data*
