@@ -29,7 +29,6 @@
     "src/couple.js",
     "src/each-pair.js",
     "src/each-polygon.js",
-    "src/get-bounding-box.js",
     "src/get-polygons.js",
     "src/index.js",
     "src/partition.js",
