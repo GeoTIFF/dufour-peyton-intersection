@@ -41,12 +41,10 @@ const {
   clusterLineSegments,
   eachPair,
   eachPolygon,
-  getBoundingBox,
   mergeConsecutiveRanges,
   mergeRanges,
   partition,
   prepareSnap,
-  range,
   rangeCut,
   rangeOverlap,
   roundDown,
@@ -402,12 +400,6 @@ test("merging of consecutive ranges", ({ eq }) => {
   );
 });
 
-test("Get Bounding Box of GeoJSON that has MultiPolygon Geometry (i.e., multiple rings)", async ({ eq }) => {
-  const country = loadVector("Akrotiri and Dhekelia.geojson");
-  const bbox = getBoundingBox(country.geometry.coordinates);
-  eq(bbox, [32.76010131835966, 34.56208419799816, 33.92147445678711, 35.118995666503906]);
-});
-
 test("get polygons for Akrotiri and Dhekelia", async ({ eq }) => {
   const geojson = loadVector("Akrotiri and Dhekelia.geojson");
   const polygons = getPolygons(geojson);
@@ -510,8 +502,7 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
         sizes,
         value: 0
       });
-    },
-    geometry_bbox: getBoundingBox(geojson)
+    }
   });
 
   eq(get_most_common(values)[0], MOST_COMMON_VALUE);
@@ -556,8 +547,7 @@ test("calculate intersection of Sri-Lanka with GeoTIFF", async ({ eq }) => {
       if (rowIndex > maxRow) maxRow = rowIndex;
       if (columnIndex < minCol) minCol = columnIndex;
       if (columnIndex > maxCol) maxCol = columnIndex;
-    },
-    geometry_bbox: getBoundingBox(geojson)
+    }
   });
 
   eq(minRow, EXPECTED_MIN_ROW);
@@ -808,8 +798,7 @@ test("self-contained holes", async ({ eq }) => {
         },
         value: 0
       });
-    },
-    geometry_bbox: getBoundingBox(geojson)
+    }
   });
   const EXPECTED_MIN_ROW = 83;
   const EXPECTED_MAX_ROW = 310;
@@ -875,8 +864,7 @@ test("hole support: Sri Lanka test case", async ({ eq }) => {
         },
         value: 0
       });
-    },
-    geometry_bbox: getBoundingBox(geojson)
+    }
   });
   const EXPECTED_MIN_ROW = 83;
   const EXPECTED_MAX_ROW = 310;
