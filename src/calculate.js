@@ -15,15 +15,17 @@ module.exports = function calculate({ geometry, raster_height, per_pixel, per_ro
     })
   );
 
-  const results = [];
+  const results = new Array(raster_height);
   for (let i = 0; i < raster_height; i++) {
     const insides = inside_rows_by_polygon
       .map(polygon_rows => polygon_rows[i])
       .filter(it => it !== undefined && it.length > 0)
       .flat();
-    const sorted = rangeSort(insides);
-    const merged = mergeConsecutiveRanges(sorted);
-    results.push(merged);
+    if (insides.length > 0) {
+      const sorted = rangeSort(insides);
+      const merged = mergeConsecutiveRanges(sorted);
+      results[i] = merged;
+    }
   }
 
   if (per_row_segment || per_pixel) {
