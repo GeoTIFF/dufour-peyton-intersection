@@ -1,3 +1,5 @@
+"use strict";
+
 const cluster = require("./cluster.js");
 
 module.exports = function clusterLineSegments(lineSegments, numberOfEdges, debug = false) {

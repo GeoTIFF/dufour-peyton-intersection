@@ -1,19 +1,22 @@
+"use strict";
 const getPolygons = require("./get-polygons.js");
 const mergeConsecutiveRanges = require("./range/merge-consecutive.js");
 const rangeSort = require("./range/sort.js");
 const calculatePolygon = require("./calculate-polygon.js");
 
-module.exports = function calculate({ geometry, raster_height, per_pixel, per_row_segment, ...rest }) {
-  polys = getPolygons(geometry);
+module.exports = function calculate({ geometry, raster_height, per_pixel, per_row_segment, debug_level = 0, ...rest }) {
+  const polys = getPolygons(geometry);
 
   // collect inside segments by row for each polygons
   const inside_rows_by_polygon = polys.map(polygon =>
     calculatePolygon({
       polygon,
       raster_height,
+      debug_level,
       ...rest
     })
   );
+  if (debug_level >= 1) console.log("[dufour-peyton-intersection] inside_rows_by_polygon:", inside_rows_by_polygon);
 
   const results = new Array(raster_height);
   for (let i = 0; i < raster_height; i++) {

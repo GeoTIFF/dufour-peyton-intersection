@@ -53,7 +53,7 @@ const {
 
 test("edge case: global box", ({ eq }) => {
   calculate({
-    debug_level: 4,
+    debug_level: 0,
     raster_bbox: [-180, -90, 180, 90],
     raster_height: 2160,
     raster_width: 4320,

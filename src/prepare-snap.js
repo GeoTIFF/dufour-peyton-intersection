@@ -1,3 +1,5 @@
+"use strict";
+
 const roundDown = require("./round-down.js");
 
 /**

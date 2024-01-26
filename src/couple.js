@@ -1,3 +1,5 @@
+"use strict";
+
 // This function takes in an array with an even number of elements and
 // returns an array that couples every two consecutive elements;
 module.exports = function couple(array) {

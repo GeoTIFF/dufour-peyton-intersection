@@ -1,3 +1,4 @@
+"use strict";
 const categorizeIntersection = require("./categorize-intersection.js");
 const clamp = require("./clamp.js");
 const couple = require("./couple.js");
@@ -136,6 +137,8 @@ module.exports = function calculateCore({
   const half_pixel_width = pixel_width / 2;
   const snap = prepareSnap(raster_xmin, pixel_width);
 
+  if (debug_level >= 1) console.log("[dufour-peyton-intersection] intersectionsByRow:", intersectionsByRow);
+
   intersectionsByRow.forEach((segmentsInRow, row_index) => {
     if (segmentsInRow.length > 0) {
       const clusters = clusterLineSegments(segmentsInRow);
@@ -143,7 +146,7 @@ module.exports = function calculateCore({
       const [throughs, nonthroughs] = partition(categorized, item => item.through);
 
       if (throughs.length % 2 === 1) {
-        if (debug_level >= 1) console.error("throughs:", JSON.stringify(throughs));
+        if (debug_level >= 1) console.error("[dufour-peyton-intersection] throughs:", JSON.stringify(throughs));
         throw Error("throughs.length for " + row_index + " is odd with " + throughs.length);
       }
 

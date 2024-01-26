@@ -1,3 +1,5 @@
+"use strict";
+
 const getDepth = require("get-depth");
 
 // call callback function for each polygon in geojson

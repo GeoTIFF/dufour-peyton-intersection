@@ -1,3 +1,5 @@
+"use strict";
+
 const categorizeIntersection = require("./categorize-intersection.js");
 const clamp = require("./clamp.js");
 const cluster = require("./cluster.js");

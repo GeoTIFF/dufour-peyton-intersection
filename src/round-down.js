@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * @name roundDown
  * @description like Math.round, but numbers in the middle are rounded down not up

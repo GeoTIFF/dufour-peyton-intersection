@@ -1,3 +1,4 @@
+"use strict";
 const calculateCore = require("./calculate-core.js");
 const checkRows = require("./check-rows.js");
 const mergeConsecutiveRanges = require("./range/merge-consecutive.js");
@@ -5,6 +6,11 @@ const rangeSort = require("./range/sort.js");
 
 module.exports = function calculateRing({ debug_level = 0, raster_bbox, raster_height, raster_width, pixel_height, pixel_width, ring }) {
   const [xmin, ymin, xmax, ymax] = raster_bbox;
+
+  if (raster_bbox.every(it => typeof it === "string")) {
+    throw new Error("[dufour-peyton-intersection] raster_bbox should be all numbers, not strings");
+  }
+
   if (pixel_height === undefined || pixel_height === null) pixel_height = (ymax - ymin) / raster_height;
   if (pixel_width === undefined || pixel_width === null) pixel_width = (xmax - xmin) / raster_width;
 

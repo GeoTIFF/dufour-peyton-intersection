@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function checkRanges(rows) {
   rows.forEach((ranges, irow) => {
     for (let irange = 0; irange < ranges.length; irange++) {

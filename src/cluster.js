@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function cluster(items, newClusterTest) {
   try {
     const numberOfItems = items.length;

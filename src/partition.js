@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * @name partition
  * @description break items into two groups based on

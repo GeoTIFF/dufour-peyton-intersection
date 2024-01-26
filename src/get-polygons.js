@@ -1,3 +1,5 @@
+"use strict";
+
 const eachPolygon = require("./each-polygon.js");
 
 module.exports = function getPolygons(geojson) {
